@@ -4,12 +4,12 @@ from brownie import network, Box, BoxV2, ProxyAdmin, TransparentUpgradeableProxy
 def main():
     account = get_account()
     print(f"Deploying to {network.show_active()}")
-    box = Box.deploy({"from": account})
+    box = Box.deploy({"from": account}, publish_source=True)
 
     # Now we need to hook it up to a proxy
     # Proxy Admins are options, but a multisig is a great way to do that
     # We will make this contract be the proxy amdin
-    proxy_admin = ProxyAdmin.deploy({"from": account})
+    proxy_admin = ProxyAdmin.deploy({"from": account}, publish_source=True)
 
     # the constructor in transparent upgradeable proxy takes the initializer function as data 
     # the data bit is taken and calls _upgradeToAndCall() until it get to the new implementation
@@ -25,7 +25,8 @@ def main():
         box.address, 
         proxy_admin.address, 
         box_encoded_initializer_function,
-        {"from": account, "gas_limit": 1000000},
+        {"from": account, "gas_limit": 1000000}, 
+        publish_source=True
     )
     print(f"Proxy deployed to {proxy}, you can now upgrade to v2!")
     # We are using the proxy address but the box.abi
@@ -35,7 +36,7 @@ def main():
     print(f"The first contract version has stored: {proxy_box.retrieve()}")
 
     # upgrade
-    box_v2 = BoxV2.deploy({"from": account})
+    box_v2 = BoxV2.deploy({"from": account}, publish_source=True)
     upgrade_transaction = upgrade(
         account, 
         proxy, # This is the proxy contract, it directs the actions to the right contract
