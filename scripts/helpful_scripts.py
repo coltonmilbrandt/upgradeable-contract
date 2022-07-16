@@ -36,3 +36,39 @@ def encode_function_data(initializer=None, *args):
     if len(args) == 0 or not initializer:
         return eth_utils.to_bytes(hexstr="0x")
     return initializer.encode_input(*args)
+
+# This function covers all the different way you might call an upgrade to your smart contract
+def upgrade(
+    account, 
+    proxy, # This is the proxy contract, it directs the actions to the right contract
+    new_implementation_address, # This is the new implementation
+    proxy_admin_contract=None, # If there is an admin contract
+    initializer=None, # like box.store
+    *args # this could be many arguments, or it could be none
+):
+    # Checks for a proxy contract
+    if proxy_admin_contract:
+        # Checks for an initializer
+        if initializer:
+            # Encode the function data
+            encoded_function_call = encode_function_data(initializer, *args)
+            # Takes the proxy_admin_contract and uses the proxyAdmin.sol to call upgrade
+            transaction = proxy_admin_contract.upgradeAndCall(
+                proxy.address,
+                new_implementation_address,
+                encoded_function_call,
+                {"from": account}
+            )
+        else:
+            transaction = proxy_admin_contract.upgrade(
+                proxy.address, new_implementation_address, {"from": account}
+            )
+    else:
+        if initializer:
+            encoded_function_call = encode_function_data(initializer, *args)
+            transaction = proxy.upgradeToAndCall(
+                new_implementation_address, encoded_function_call, {"from":account}
+            )
+        else: 
+            transaction = proxy.upgradeTo(new_implementation_address, {"from": account})
+    return transaction
