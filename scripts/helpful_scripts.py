@@ -59,16 +59,23 @@ def upgrade(
                 encoded_function_call,
                 {"from": account}
             )
+        # If they don't have an initializer, we don't need to encode a function call
         else:
+            # This simply upgrades it, but doesn't call
             transaction = proxy_admin_contract.upgrade(
                 proxy.address, new_implementation_address, {"from": account}
             )
+    # If it doesn't have a proxy admin
     else:
+        # Check for an inititializer
         if initializer:
+            # If there is an initializer, then we have to encode that function call
             encoded_function_call = encode_function_data(initializer, *args)
+            # This is without the proxy_admin
             transaction = proxy.upgradeToAndCall(
                 new_implementation_address, encoded_function_call, {"from":account}
             )
+        # No proxy_admin and no initializer to encode a function call for
         else: 
             transaction = proxy.upgradeTo(new_implementation_address, {"from": account})
     return transaction
